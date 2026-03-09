@@ -1,10 +1,16 @@
+# Step 1: Build the JAR on Render
+FROM gradle:7.6-jdk17 AS build
+WORKDIR /home/gradle/src
+COPY --chown=gradle:gradle . .
+RUN chmod +x gradlew
+RUN ./gradlew bootJar --no-daemon
+
+# Step 2: Run the JAR
 FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /app
+COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 
-# Copy the JAR from your local build folder
-COPY build/libs/coupon-management-system-0.0.1-SNAPSHOT.jar app.jar
-
-# Important: Render uses a dynamic PORT
+# Dynamic PORT for Render
 ENV PORT=8080
 EXPOSE 8080
 
