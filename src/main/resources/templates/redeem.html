@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Redeem Coupons</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .feature-card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .nav-link {
+            color: white !important;
+        }
+
+        .nav-link:hover {
+            color: #ccc !important;
+        }
+
+        .result-success {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+
+        .result-error {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+        }
+
+        .price-breakdown {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <strong>Coupon Management System</strong>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/users">Users</a>
+                <a class="nav-link" href="/products">Products</a>
+                <a class="nav-link" href="/coupons">Coupons</a>
+                <a class="nav-link active" href="/redeem">Redeem</a>
+                <a class="nav-link" href="/history">History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>💰 Redeem Coupons</h2>
+
+        <!-- Apply Coupon Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5>Apply Coupon to Purchase</h5>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/apply-coupon}" th:object="${redemptionRequest}" method="post">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Select User</label>
+                            <select th:field="*{userId}" class="form-select" required>
+                                <option value="">Choose User...</option>
+                                <option th:each="user : ${users}" th:value="${user.userId}"
+                                    th:text="${user.name + ' (' + user.email + ')'}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Select Product</label>
+                            <select th:field="*{productId}" class="form-select" required>
+                                <option value="">Choose Product...</option>
+                                <option th:each="product : ${products}" th:value="${product.productId}"
+                                    th:text="${product.name + ' - ₹' + #numbers.formatDecimal(product.price, 1, 2)}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Enter Coupon Code</label>
+                            <input type="text" th:field="*{couponCode}" class="form-control"
+                                placeholder="e.g., WELCOME10" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                🎫 Apply Coupon & Calculate Discount
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Redemption Result -->
+        <div th:if="${redemptionResponse}" class="card mb-4">
+            <div class="card-header"
+                th:classappend="${redemptionResponse.success} ? 'bg-success text-white' : 'bg-danger text-white'">
+                <h5
+                    th:text="${redemptionResponse.success} ? '✅ Coupon Applied Successfully!' : '❌ Coupon Application Failed'">
+                </h5>
+            </div>
+            <div class="card-body" th:classappend="${redemptionResponse.success} ? 'result-success' : 'result-error'">
+                <div th:if="${redemptionResponse.success}">
+                    <h5 class="text-success">Discount Applied Successfully!</h5>
+                    <div class="price-breakdown mt-3">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h6>Original Price</h6>
+                                <h4 th:text="'₹' + ${#numbers.formatDecimal(redemptionResponse.originalPrice, 1, 2)}"
+                                    class="text-muted"></h4>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Discount Applied</h6>
+                                <h4 th:text="'-₹' + ${#numbers.formatDecimal(redemptionResponse.discountAmount, 1, 2)}"
+                                    class="text-danger"></h4>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Final Price</h6>
+                                <h4 th:text="'₹' + ${#numbers.formatDecimal(redemptionResponse.finalPrice, 1, 2)}"
+                                    class="text-success"></h4>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>You Saved</h6>
+                                <h4 th:text="'₹' + ${#numbers.formatDecimal(redemptionResponse.discountAmount, 1, 2)}"
+                                    class="text-warning"></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div th:unless="${redemptionResponse.success}">
+                    <h5 class="text-danger">Coupon Application Failed</h5>
+                    <p th:text="${redemptionResponse.message}" class="lead"></p>
+                    <p class="text-muted">Please check the coupon code, validity, and try again.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Coupons -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5>🎫 Available Active Coupons</h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${coupons.empty}">
+                    <div class="alert alert-warning">
+                        <h6>No Active Coupons Available</h6>
+                        <p>Create some coupons first to use this feature.</p>
+                    </div>
+                </div>
+                <div th:unless="${coupons.empty}" class="row">
+                    <div th:each="coupon : ${coupons}" class="col-md-4 mb-3">
+                        <div class="card feature-card">
+                            <div class="card-body">
+                                <h6 th:text="${coupon.code}" class="text-primary"></h6>
+                                <p class="small" th:text="${coupon.description}"></p>
+                                <div class="d-flex justify-content-between">
+                                    <span th:if="${coupon.discountType == 'PERCENTAGE'}"
+                                        th:text="${coupon.discountValue} + '% OFF'" class="badge bg-success">
+                                    </span>
+                                    <span th:if="${coupon.discountType == 'FIXED_AMOUNT'}"
+                                        th:text="'₹' + ${#numbers.formatDecimal(coupon.discountValue, 1, 2)} + ' OFF'"
+                                        class="badge bg-warning">
+                                    </span>
+                                    <small
+                                        th:text="'Valid until: ' + ${#temporals.format(coupon.endDate, 'dd/MM/yyyy')}"
+                                        class="text-muted">
+                                    </small>
+                                </div>
+                                <!-- SIMPLE ACTIVE STATUS WITHOUT couponService -->
+                                <div class="mt-2">
+                                    <span th:if="${coupon.endDate.isAfter(T(java.time.LocalDate).now())}"
+                                        class="badge bg-success">Active</span>
+                                    <span th:if="${coupon.endDate.isBefore(T(java.time.LocalDate).now())}"
+                                        class="badge bg-danger">Expired</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h4 th:text="${users.size()}">0</h4>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h4 th:text="${products.size()}">0</h4>
+                        <p>Total Products</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h4 th:text="${coupons.size()}">0</h4>
+                        <p>Total Coupons</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h4 th:text="${coupons.?[endDate.isAfter(T(java.time.LocalDate).now())].size()}">0</h4>
+                        <p>Active Coupons</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <h5>👥 Add More Users</h5>
+                        <p>Need more users? Add them here</p>
+                        <a href="/users" class="btn btn-outline-primary">Go to Users</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <h5>🎫 Create More Coupons</h5>
+                        <p>Create additional discount coupons</p>
+                        <a href="/coupons" class="btn btn-outline-success">Go to Coupons</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p>&copy; 2024 Coupon Management System</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

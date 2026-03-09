@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coupons Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .feature-card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .nav-link {
+            color: white !important;
+        }
+
+        .nav-link:hover {
+            color: #ccc !important;
+        }
+
+        .coupon-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-expired {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-upcoming {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .delete-btn {
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .delete-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <strong>Coupon Management System</strong>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/users">Users</a>
+                <a class="nav-link" href="/products">Products</a>
+                <a class="nav-link active" href="/coupons">Coupons</a>
+                <a class="nav-link" href="/redeem">Redeem</a>
+                <a class="nav-link" href="/history">History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>🎫 Coupons Management</h2>
+
+        <!-- Add Coupon Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5>Create New Coupon</h5>
+            </div>
+            <div class="card-body">
+                <!-- ✅ ERROR MESSAGE DISPLAY -->
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <form th:action="@{/coupons}" method="post">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Coupon Code</label>
+                            <input type="text" name="code" class="form-control" placeholder="e.g., WELCOME10" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" name="description" class="form-control" placeholder="Coupon description">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Discount Type</label>
+                            <select name="discountType" class="form-select" required>
+                                <option value="">Select Type</option>
+                                <option value="PERCENTAGE">Percentage</option>
+                                <option value="FIXED_AMOUNT">Fixed Amount</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Discount Value</label>
+                            <input type="number" name="discountValue" class="form-control" placeholder="0.00"
+                                step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Usage Limit</label>
+                            <input type="number" name="usageLimit" class="form-control" placeholder="100" min="1"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="startDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="endDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100">Create Coupon</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Coupons List -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5>All Coupons <span class="badge bg-light text-dark" th:text="${coupons.size()}">0</span></h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${coupons.empty}">
+                    <div class="alert alert-info text-center">
+                        <h5>No Coupons Found</h5>
+                        <p>Create your first coupon using the form above!</p>
+                    </div>
+                </div>
+
+                <div th:unless="${coupons.empty}">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Coupon ID</th>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Discount Type</th>
+                                <th>Discount Value</th>
+                                <th>Validity</th>
+                                <th>Usage Limit</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="coupon : ${coupons}">
+                                <td th:text="${coupon.couponId}"></td>
+                                <td>
+                                    <strong th:text="${coupon.code}" class="text-primary"></strong>
+                                </td>
+                                <td th:text="${coupon.description}"></td>
+                                <td>
+                                    <span th:if="${coupon.discountType == 'PERCENTAGE'}" class="badge bg-info"
+                                        th:text="${coupon.discountType}"></span>
+                                    <span th:if="${coupon.discountType == 'FIXED_AMOUNT'}" class="badge bg-warning"
+                                        th:text="${coupon.discountType}"></span>
+                                </td>
+                                <td>
+                                    <span th:if="${coupon.discountType == 'PERCENTAGE'}"
+                                        th:text="${coupon.discountValue} + '%'"></span>
+                                    <span th:if="${coupon.discountType == 'FIXED_AMOUNT'}"
+                                        th:text="'₹' + ${#numbers.formatDecimal(coupon.discountValue, 1, 2)}"></span>
+                                </td>
+                                <td
+                                    th:text="${#temporals.format(coupon.startDate, 'dd/MM/yyyy')} + ' to ' + ${#temporals.format(coupon.endDate, 'dd/MM/yyyy')}">
+                                </td>
+                                <td th:text="${coupon.usageLimit}"></td>
+                                <td>
+                                    <!-- SIMPLE STATUS CHECK WITHOUT couponService -->
+                                    <span th:if="${coupon.endDate.isAfter(T(java.time.LocalDate).now())}"
+                                        class="badge bg-success">Active</span>
+                                    <span th:if="${coupon.endDate.isBefore(T(java.time.LocalDate).now())}"
+                                        class="badge bg-danger">Expired</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/redeem}" class="btn btn-sm btn-outline-primary">Use Coupon</a>
+                                    <!-- DELETE BUTTON -->
+                                    <form th:action="@{/coupons/delete/{id}(id=${coupon.couponId})}" method="post"
+                                        style="display: inline;">
+                                        <button type="submit" class="btn btn-sm delete-btn"
+                                            onclick="return confirm('Are you sure you want to delete this coupon?')">
+                                            🗑️ Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h4 th:text="${coupons.size()}">0</h4>
+                        <p>Total Coupons</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h4 th:text="${coupons.?[endDate.isAfter(T(java.time.LocalDate).now())].size()}">0</h4>
+                        <p>Active Coupons</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h4 th:text="${coupons.?[discountType == 'PERCENTAGE'].size()}">0</h4>
+                        <p>Percentage Coupons</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h4 th:text="${coupons.?[discountType == 'FIXED_AMOUNT'].size()}">0</h4>
+                        <p>Fixed Amount Coupons</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <h5>📦 View Products</h5>
+                        <p>Manage products for coupon application</p>
+                        <a href="/products" class="btn btn-outline-primary">Go to Products</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <h5>👥 Manage Users</h5>
+                        <p>Add users who can use coupons</p>
+                        <a href="/users" class="btn btn-outline-success">Go to Users</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <h5>💰 Redeem Coupons</h5>
+                        <p>Apply coupons to purchases</p>
+                        <a href="/redeem" class="btn btn-outline-warning">Redeem Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p>&copy; 2024 Coupon Management System</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
