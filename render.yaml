@@ -1,24 +1,16 @@
 services:
-  # The Database
-  - type: database
-    name: coupon-database
-    databaseName: coupon_db
-    user: root
-    plan: free # Note: Render free tier is PostgreSQL. For MySQL, we'll use a Web Service with Docker.
-
   # The App
   - type: web
     name: coupon-management-system
-    env: docker
-    plan: starter # Docker requires at least 'starter' on some platforms, but Render often allows 'free' for web services.
+    env: java
+    plan: free
     region: ohio
-    dockerfilePath: ./Dockerfile
+    buildCommand: ./gradlew build
+    startCommand: java -jar build/libs/coupon-management-system-0.0.1-SNAPSHOT.jar
     envVars:
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:mysql://db:3306/coupon_db
+        value: YOUR_MYSQL_DATABASE_URL # Placeholder for external MySQL
       - key: SPRING_DATASOURCE_USERNAME
         value: root
       - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: coupon-database
-          property: password
+        value: root
