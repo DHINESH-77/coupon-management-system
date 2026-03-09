@@ -5,7 +5,7 @@ COPY --chown=gradle:gradle . .
 RUN ./gradlew bootJar --no-daemon
 
 # Run Stage
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-focal
 WORKDIR /app
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 
